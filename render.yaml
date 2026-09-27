@@ -1,21 +1,40 @@
 # Render blueprint. Deploy with: New -> Blueprint -> point at this repo.
 #
-# Note on plan: torch + sentence-transformers + chromadb need roughly 1.5 GB of
-# RAM. Render's free tier (0.5 GB) will OOM on import, so this pins `starter`.
+# Memory: the first deploy of this app was OOM-killed on the free plan. The
+# culprit was torch, not the workload: sentence-transformers pulls 339 MB of
+# shared libraries, and cgroup accounting charges the page cache those mappings
+# leave behind, so a process-level RSS reading understates real usage. The
+# embedder now runs on ONNX Runtime (already a chromadb dependency) and serves
+# all-MiniLM-L6-v2 with cosine 1.0000 to the old torch vectors, so nothing about
+# the store or the answers changed. Measured serving peak is 300 MB, leaving
+# 212 MB of the free tier's 512 MB.
+#
+# Ingest runs in buildCommand, not at start. ONNX Runtime's inference arena
+# spikes to ~540 MB on first use, which fits in a build step but not in the
+# 512 MB service, and baking the store into the image means the runtime only
+# ever starts one process: ingest from the committed chunk corpus, embed 24
+# chunks, done. No network fetch at boot.
 services:
   - type: web
     name: mf-rag-chatbot
     runtime: python
-    plan: starter
-    pythonVersion: "3.12"
-    buildCommand: pip install --no-cache-dir -r requirements.txt
+    plan: free
+    buildCommand: pip install --no-cache-dir -r requirements.txt && python -m ingest.run
     startCommand: bash scripts/start.sh
     healthCheckPath: /_stcore/health
-    autoDeploy: false
+    autoDeployTrigger: commit
     envVars:
+      # Native runtimes read the Python version from this variable; there is no
+      # `pythonVersion` blueprint field.
+      - key: PYTHON_VERSION
+        value: "3.12"
       # Set LLM_API_KEY in the Render dashboard (it is a secret; never commit it).
       - key: LLM_API_KEY
         sync: false
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: TOKENIZERS_PARALLELISM
+        value: "false"
       - key: LLM_BASE_URL
         value: https://api.groq.com/openai/v1
       - key: LLM_MODEL

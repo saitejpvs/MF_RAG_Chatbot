@@ -17,9 +17,7 @@ else
   echo "[start] vector store already present, skipping ingest"
 fi
 
-echo "[start] serving Streamlit on 0.0.0.0:${PORT}"
-exec streamlit run app/ui/app.py \
-  --server.address 0.0.0.0 \
-  --server.port "${PORT}" \
-  --server.headless true \
-  --browser.gatherUsageStats false
+# Load the encoder inside the serving process (see scripts/serve.py) so the
+# memory peak is already allocated before the health check passes.
+echo "[start] serving on 0.0.0.0:${PORT}"
+exec python scripts/serve.py "${PORT}"

@@ -1,10 +1,18 @@
 # Local data and secrets
 data/chroma/
 data/raw/
-data/debug/
+# Ignore the directory's contents but keep the chunk corpus below: it is small
+# (20 KB), deterministic, and lets a fresh container skip re-fetching and
+# re-chunking the five source pages at boot.
+data/debug/*
+!data/debug/chunks.jsonl
 .env
 .venv/
 venv/
+
+# The cleaned chunk corpus is small (20 KB), deterministic, and lets a fresh
+# container skip re-fetching and re-chunking the five source pages at boot.
+!data/debug/chunks.jsonl
 
 # Python
 __pycache__/
