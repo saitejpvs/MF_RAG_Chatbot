@@ -33,6 +33,9 @@ python3 -m venv .venv
 ```
 
 The embedding model (`sentence-transformers/all-MiniLM-L6-v2`, ~90 MB) downloads on first run.
+It runs on **ONNX Runtime** rather than sentence-transformers: same weights, same 384-dim vectors
+(cosine 1.0000 against the torch build), no torch. Torch's 339 MB of shared libraries were enough
+to get the container OOM-killed on Render's 512 MB free tier; see `render.yaml`.
 
 ### Optional: LLM for prose answers
 

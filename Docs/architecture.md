@@ -47,7 +47,7 @@ This document describes how the prototype is built. Ingestion and retrieval stay
 | System | Role | When |
 | --- | --- | --- |
 | Groww public HTML | Corpus | Ingestion only |
-| Hugging Face MiniLM | Embeddings | Ingest + query |
+| Hugging Face MiniLM on ONNX Runtime | Embeddings | Ingest + query |
 | LLM (local or API) | Answer wording | Query time only |
 | ChromaDB (local disk) | Vector + metadata store | Both |
 
