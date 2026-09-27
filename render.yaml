@@ -1,0 +1,35 @@
+# Render blueprint. Deploy with: New -> Blueprint -> point at this repo.
+#
+# Note on plan: torch + sentence-transformers + chromadb need roughly 1.5 GB of
+# RAM. Render's free tier (0.5 GB) will OOM on import, so this pins `starter`.
+services:
+  - type: web
+    name: mf-rag-chatbot
+    runtime: python
+    plan: starter
+    pythonVersion: "3.12"
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+    startCommand: bash scripts/start.sh
+    healthCheckPath: /_stcore/health
+    autoDeploy: false
+    envVars:
+      # Set LLM_API_KEY in the Render dashboard (it is a secret; never commit it).
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: LLM_MODEL
+        value: openai/gpt-oss-120b
+      # Reasoning models need a budget well above the 3-sentence answer cap.
+      - key: LLM_MAX_TOKENS
+        value: "800"
+      - key: LLM_TIMEOUT_SECONDS
+        value: "60"
+      - key: MEMORY_WINDOW_MESSAGES
+        value: "10"
+      - key: MEMORY_LLM_REWRITE
+        value: "0"
+      - key: LLM_MAX_ATTEMPTS
+        value: "3"
+      - key: LLM_RETRY_BACKOFF
+        value: "2.0"
