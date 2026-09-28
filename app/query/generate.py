@@ -284,6 +284,15 @@ def generate_answer(
         ))
     except Exception as exc:  # noqa: BLE001 — never fail the chat on LLM errors
         logger.error("LLM call failed (%s); using extractive fallback", exc)
+        # A key and a base URL pointing at different providers is the most
+        # common misconfiguration, and the 401 alone does not make that obvious.
+        if client.base_url and "openai.com" in client.base_url and "gsk_" in client.api_key:
+            logger.error(
+                "LLM_API_KEY looks like a Groq key but LLM_BASE_URL is %s; set "
+                "LLM_BASE_URL=https://api.groq.com/openai/v1 and a Groq-capable "
+                "LLM_MODEL, or supply an OpenAI key instead",
+                client.base_url,
+            )
         return extractive_answer(question, hits, max_sentences=max_sentences)
 
     if not answer:
